@@ -2,7 +2,7 @@
 
 Run a market making desk in a fictional stock called ARCL. You choose the price you will pay to buy and the price you will accept to sell. A rival dealer competes for every order. After the close, you can find out who traded and replay one decision against the same market.
 
-[Open the private simulator](https://the-other-side-quant-desk.dang-family-1930.chatgpt.site)
+[Play The Other Side on GitHub Pages](https://thaithinhtim602.github.io/the-other-side/)
 
 ## Play a first round
 
