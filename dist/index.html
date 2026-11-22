@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#14171b">
+  <meta name="description" content="Run a simulated market making desk, replay a trade, and test your quoting strategy.">
+  <title>The Other Side | Trading desk</title>
+  <link rel="icon" href="./mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to workspace</a>
+<header class="topbar"><div class="bar-inner">
+  <a class="brand" href="#desk" aria-label="The Other Side home"><img src="./mark.svg" alt="" width="34" height="34"><span>The Other Side</span></a>
+  <nav aria-label="Workspace">
+    <a href="#desk" data-tab="desk"><i data-icon="desk"></i>Trading desk</a>
+    <a href="#replay" data-tab="replay"><i data-icon="replay"></i>Replay room</a>
+    <a href="#lab" data-tab="lab"><i data-icon="lab"></i>Strategy lab</a>
+  </nav>
+  <button class="plain guide-btn" data-cmd="guide"><i data-icon="book"></i>Desk guide</button>
+</div></header>
+<main id="main" tabindex="-1">
+  <section id="desk-page" aria-labelledby="desk-heading">
+    <div class="page-heading"><div>
+      <div class="eyebrow"><span class="indicator"></span>MARKET MAKING SIMULATOR</div>
+      <h1 id="desk-heading">Trading desk</h1>
+      <p>Set your prices, manage your inventory, and read the order flow.</p>
+    </div><div class="round-control">
+      <div class="clock"><div class="minor" id="round-status">Ready to open</div><b id="clock">05:00</b></div>
+      <button class="primary play" id="play-btn" data-cmd="play"><i data-icon="play"></i><span>Start round</span></button>
+    </div></div>
+    <div class="metrics" aria-label="Desk performance">
+      <article class="metric"><div class="metric-label"><span class="metric-icon"><i data-icon="pnl"></i></span>Desk P&amp;L</div><strong id="pnl">$0.00</strong><small>Profit after trading fees</small></article>
+      <article class="metric"><div class="metric-label"><span class="metric-icon"><i data-icon="layers"></i></span>Inventory</div><strong><span id="inventory">0</span><em> shares</em></strong><small id="inv-cap">Position limit ±1,000</small></article>
+      <article class="metric"><div class="metric-label"><span class="metric-icon"><i data-icon="spread"></i></span>Quoted spread</div><strong id="spread">$0.08</strong><small>Distance from bid to ask</small></article>
+      <article class="metric"><div class="metric-label"><span class="metric-icon"><i data-icon="target"></i></span>Fill rate</div><strong id="fill-rate">0.0%</strong><small id="filled-detail">0 of 0 shares captured</small></article>
+    </div>
+    <div class="desk-grid">
+      <article class="panel market-panel">
+        <div class="panel-head"><div class="panel-title"><i data-icon="chart"></i><h2>Market monitor</h2></div><div class="seg" aria-label="Chart time window"><button data-window="12">1m</button><button data-window="36">3m</button><button data-window="60">5m</button></div></div>
+        <div class="instrument"><div><div class="instrument-name"><b>ARCL</b><span>Arc Light Industries</span></div><div class="market-value"><strong id="reference">$100.00</strong><span class="change" id="ref-change"></span></div></div><span class="tag" id="market-status">Opening tape</span></div>
+        <div class="chart-wrap" id="chart-wrap"><canvas id="market-chart" tabindex="0" aria-label="Public reference price and executed volume. Use the left and right arrow keys to inspect individual observations."></canvas><div id="hover-tip" hidden></div></div>
+        <div class="chart-foot"><span><i class="key-line"></i>Reference</span><button id="fills-toggle" data-cmd="fills" class="key-toggle" aria-pressed="true"><i class="key-dot"></i>My fills</button><span class="chart-unit">USD · 5 second intervals</span></div>
+      </article>
+      <article class="panel quote-panel">
+        <div class="panel-head"><div class="panel-title"><i data-icon="sliders"></i><h2>Quote ticket</h2></div><label class="sr" for="desk-mode">Desk control</label><select id="desk-mode" class="compact"><option value="manual">Manual</option><option value="rule">Lab rule</option></select></div>
+        <div class="ticket-body">
+          <div class="quote-pair"><div class="buy"><small>YOUR BID</small><b id="bid">…</b><span id="bid-size"></span></div><div class="sell"><small>YOUR ASK</small><b id="ask">…</b><span id="ask-size"></span></div></div>
+          <div id="manual-fields">
+            <div class="field-row"><label for="half">Half spread</label><div class="stepper"><button data-step="half" data-delta="-1" aria-label="Decrease half spread">−</button><span><input id="half" required type="number" min="1" max="20" step="1" value="4"><span>¢</span></span><button data-step="half" data-delta="1" aria-label="Increase half spread">+</button></div></div>
+            <div class="field-row"><label for="tilt">Price shift</label><div class="stepper"><button data-step="tilt" data-delta="-1" aria-label="Decrease price shift">−</button><span><input id="tilt" required type="number" min="-20" max="20" step="1" value="0"><span>¢</span></span><button data-step="tilt" data-delta="1" aria-label="Increase price shift">+</button></div></div>
+            <div class="field-row"><label for="size">Shares per side</label><select id="size"><option>25</option><option>50</option><option selected>100</option><option>200</option><option>500</option></select></div>
+            <button class="primary post" id="post-btn" data-cmd="post"><i data-icon="check"></i>Post quote</button>
+          </div>
+          <div id="auto-fields" hidden><p>Your lab rule updates both prices before each order using your inventory and recent order flow.</p><a class="secondary" href="#lab"><i data-icon="lab"></i>Edit strategy</a></div>
+          <div class="rival-row"><span>Rival bid / ask</span><b id="rival-quote"></b></div><small class="ticket-note" id="ticket-note">Quotes follow the reference price.</small>
+        </div>
+      </article>
+      <article class="panel tape-panel">
+        <div class="panel-head"><div class="panel-title"><i data-icon="tape"></i><h2>Order tape</h2></div><div class="seg"><button data-filter="all">All orders</button><button data-filter="mine">My fills</button></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Customer</th><th>Shares filled</th><th>Avg. price</th><th>Dealer</th></tr></thead><tbody id="tape"></tbody></table></div>
+      </article>
+      <article class="panel controls-panel">
+        <div class="panel-head"><div class="panel-title"><i data-icon="clock"></i><h2>Round controls</h2></div><span class="minor mono" id="step-count">0 / 60</span></div>
+        <div class="controls-body"><div class="progress-track"><span id="round-progress"></span></div>
+          <div class="field-row"><span>Playback speed</span><div class="seg"><button data-speed="1">1×</button><button data-speed="4">4×</button><button data-speed="20">20×</button></div></div>
+          <div class="control-buttons"><button data-cmd="step" class="secondary" id="step-btn"><i data-icon="step"></i>Next order</button><button data-cmd="close" class="secondary" id="close-btn"><i data-icon="fast"></i>Run to close</button></div>
+          <div class="seed-row"><span id="desk-seed"></span><button class="text-btn" data-cmd="new">New round</button></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="replay-page" hidden aria-labelledby="replay-heading">
+    <div class="page-heading"><div><div class="eyebrow"><span class="indicator"></span>TRADE ANALYSIS</div><h1 id="replay-heading">Replay room</h1><p>See who traded, what they knew, and what a different quote would have changed.</p></div><div><label class="minor block" for="replay-source">Recorded session</label><select id="replay-source"></select></div></div>
+    <div class="replay-grid"><article class="panel"><div class="panel-head"><div class="panel-title"><i data-icon="replay"></i><h2>Order inspector</h2></div><span class="tag" id="replay-tag"></span></div>
+      <div class="section-pad"><div class="scrub-head"><div><span class="minor">Selected order</span><h3 id="event-name"></h3></div><div class="mini-actions"><button class="square" id="prev-order" data-cmd="prev" aria-label="Previous order">‹</button><button class="square" id="next-order" data-cmd="next" aria-label="Next order">›</button></div></div>
+      <label class="sr" for="scrub">Select an order to inspect</label><input class="range" type="range" id="scrub" min="1" max="60" value="1"><div class="range-ends"><span>09:30:05</span><span>09:35:00</span></div>
+      <div class="reveal"><span class="minor">Behind the order</span><h3 id="motive-name"></h3><p id="motive-detail"></p></div>
+      <dl class="fact-list" id="replay-facts"></dl></div></article>
+      <article class="panel"><div class="panel-head"><div class="panel-title"><i data-icon="branch"></i><h2>Change this quote</h2></div></div><div class="section-pad"><p class="intro-note">Replace your quote for this order. All later instructions and market events stay the same.</p>
+      <div class="field-row"><label for="alt-half">Half spread (¢)</label><input id="alt-half" required type="number" min="1" max="20" step="1"></div>
+      <div class="field-row"><label for="alt-tilt">Price shift (¢)</label><input id="alt-tilt" required type="number" min="-20" max="20" step="1"></div>
+      <div class="field-row"><label for="alt-size">Shares per side</label><input id="alt-size" required type="number" min="1" max="500" step="1"></div>
+      <button class="primary post" data-cmd="fork"><i data-icon="branch"></i>Replay with this quote</button>
+      <div id="fork-output" class="fork-output" aria-live="polite"></div></div></article>
+    </div>
+    <article class="panel replay-tape"><div class="panel-head"><div class="panel-title"><i data-icon="tape"></i><h2>Round ledger</h2></div><span class="minor">Select a time to inspect the order</span></div><div class="table-wrap ledger-scroll"><table><thead><tr><th>Time</th><th>Customer</th><th>Requested</th><th>Your fill</th><th>Inventory</th><th>Desk P&amp;L</th></tr></thead><tbody id="ledger"></tbody></table></div></article>
+  </section>
+
+  <section id="lab-page" hidden aria-labelledby="lab-heading">
+    <div class="page-heading"><div><div class="eyebrow"><span class="indicator"></span>STRATEGY RESEARCH</div><h1 id="lab-heading">Strategy lab</h1><p>Write a quoting rule and compare it with three dealers on identical markets.</p></div></div>
+    <div class="lab-grid"><article class="panel"><div class="panel-head"><div class="panel-title"><i data-icon="sliders"></i><h2>Rule builder</h2></div></div>
+      <div class="section-pad"><div id="lab-fields"></div><details class="python formula-box"><summary>Edit price shift formula</summary><label class="block" for="formula">Python expression returning cents</label><textarea id="formula" rows="3" spellcheck="false" maxlength="300"></textarea><p class="minor">Use inventory (shares), flow (−1 to +1), risk_weight, or flow_weight. Arithmetic, comparisons, abs, min, max, and Python’s if / else expression are supported.</p><p class="minor">Example: <code>-5 if inventory &gt; 200 else 0</code></p><p class="minor" id="formula-status" role="status"></p><button class="secondary" data-cmd="save-formula">Apply formula</button></details><details class="python"><summary>View Python strategy</summary><pre id="rule-python"></pre><button class="secondary" data-cmd="python"><i data-icon="download"></i>Download Python</button></details>
+      <button class="secondary full" id="apply-rule" data-cmd="use-rule"><i data-icon="desk"></i>Use rule at desk</button></div></article>
+      <article class="panel"><div class="panel-head"><div class="panel-title"><i data-icon="lab"></i><h2>Strategy tournament</h2></div><span class="tag">Matched sessions</span></div>
+      <div class="section-pad"><p class="intro-note">Each dealer faces the same customers, rival quotes, and price moves. Only the quoting rule changes.</p>
+      <form id="tournament-form"><div class="run-fields"><label>Rounds<select id="tournament-rounds"><option>100</option><option>500</option><option selected>1000</option></select></label><label>Starting seed<input type="number" id="tournament-seed" value="41726" min="0" max="4294967295" required step="1"></label></div>
+      <button type="submit" class="primary" id="run-tournament"><i data-icon="play"></i>Run tournament</button><button type="button" class="text-btn" id="cancel-tournament" data-cmd="cancel-tournament" hidden>Cancel</button></form>
+      <p id="tournament-status" aria-live="polite" class="muted small"></p><div id="tournament-output"></div></div></article>
+    </div>
+  </section>
+  <footer><span><i class="footer-light"></i>Fictional market</span><span>One stock · Two dealers · Five minutes</span></footer>
+</main>
+<dialog id="guide"><div class="dialog-head"><h2>Desk guide</h2><button class="square" data-dismiss="guide" aria-label="Close guide">×</button></div><div class="dialog-content">
+  <h3>Your first round</h3><ol><li><b>Start round</b> opens your desk. Each customer arrives five simulated seconds after the last. <b>Next order</b> lets you go one at a time.</li><li>Your <b>bid</b> is what you pay to buy. Your <b>ask</b> is what you charge to sell. A customer who sells leaves you holding shares.</li><li>Change the half spread or price shift, then select <b>Post quote</b>. The new settings apply from the next order. Both prices follow the public reference.</li><li>At the end, open the <b>Replay room</b>. Choose a trade, change the quote, and see the effect on your final profit.</li></ol>
+  <h3>Why lower both prices?</h3><p>If you already own a lot of shares, a lower bid makes you a less attractive buyer. A lower ask can help you sell. Your rival can still beat either price.</p>
+  <h3>Reading the chart</h3><p>The line tracks the public reference. Bars show shares traded per order, colored by the customer’s side. Dots mark your fills. Hover over the chart, or focus it and use the arrow keys, to read a time, price, and volume.</p><h3>How the exchange works</h3><p>Each order is a request for a price. An eligible dealer must meet the customer’s private limit. The best price wins first, and a seeded coin toss breaks ties. Your quote size refreshes on each order. The rival can take any eligible remainder. Inventory is capped at 1,000 shares in either direction.</p>
+  <h3>How profit is counted</h3><p>Profit equals cash from trading plus the value of your shares. A short position is a negative share count. Each share you trade costs one cent in fees. Buying 100 shares at $99.95 and selling them at $100.05 earns $10 before fees and $8 after fees.</p><p>During the round, shares are valued at the public reference. At the close, the simulator reveals the final underlying value and uses it to value your remaining position. The final mark is a valuation, not a sale.</p>
+  <h3>What the seed does</h3><p>The seed is the number used to generate the market. Reusing it recreates the same customers, hidden values, and rival quotes. Your own fills depend on what you post. Five minutes of opening history gives you price and order context before your desk opens.</p>
+  <h3>Research limits</h3><p>One fictional stock trades against one rival. Your trades do not move the underlying price. There is no borrowing cost, network delay, or queue beyond the seeded tie break. Tournament results describe this simulated market.</p>
+</div></dialog>
+<dialog id="new-dialog"><div class="dialog-head"><h2>Open a new round</h2><button class="square" data-dismiss="new-dialog" aria-label="Close new round">×</button></div><form id="new-form" class="dialog-content"><p id="new-note"></p><label class="block" for="new-seed">Market seed</label><input type="number" id="new-seed" min="0" max="4294967295" required step="1"><div class="dialog-actions"><button type="button" class="secondary" data-dismiss="new-dialog">Cancel</button><button type="submit" class="primary">Open desk</button></div></form></dialog>
+<div id="toast" role="status"></div>
+<noscript>This simulator requires JavaScript to run the exchange in your browser.</noscript>
+<script type="module" src="./app.mjs"></script>
+</body>
+</html>
